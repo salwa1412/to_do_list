@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>Dashboard TaskFlow</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect"
+    href="https://fonts.googleapis.com">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="dashboard-body">
+
+<div class="dashboard-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-logo">
+      <div class="logo-icon">✓</div>
+      <h2>TaskFlow</h2>
+    </div>
+
+    <ul class="menu">
+      <li class="active">
+        Dashboard
+      </li>
+
+      <li>
+        Semua Tugas
+      </li>
+
+      <li onclick="logout()">
+        Logout
+      </li>
+    </ul>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <div class="topbar">
+
+      <div>
+        <h1 id="greeting">
+          Selamat Datang
+        </h1>
+
+        <p>
+          Kelola tugasmu dengan lebih mudah
+        </p>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Cari tugas..."
+        id="searchInput"
+        class="search-box"
+      >
+
+    </div>
+
+    <!-- CARD -->
+    <div class="stats-container">
+
+      <div class="card completed-card">
+        <h3>Selesai</h3>
+        <h2 id="completedCount">
+          0
+        </h2>
+      </div>
+
+      <div class="card pending-card">
+        <h3>Belum Selesai</h3>
+        <h2 id="pendingCount">
+          0
+        </h2>
+      </div>
+
+      <div class="card overdue-card">
+        <h3>Terlambat</h3>
+        <h2 id="overdueCount">
+          0
+        </h2>
+      </div>
+
+    </div>
+
+    <!-- FORM -->
+    <div class="task-form">
+
+      <h2>Tambah Tugas</h2>
+
+      <input
+        type="text"
+        id="judul"
+        placeholder="Judul tugas"
+      >
+
+      <textarea
+        id="deskripsi"
+        placeholder="Deskripsi tugas"
+      ></textarea>
+
+      <input
+        type="date"
+        id="tenggat"
+      >
+
+      <button onclick="addTask()">
+        Tambah
+      </button>
+
+    </div>
+
+    <!-- TASK LIST -->
+    <div class="task-section">
+
+      <h2>Daftar Tugas</h2>
+
+      <div id="taskList"></div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script src="dashboard.js"></script>
+
+</body>
+</html>

@@ -1,31 +1,34 @@
-const jwt = require('jsonwebtoken');
-
-const authMiddleware = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      return res.status(401).json({
-        message: 'Token tidak ditemukan',
-      });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    req.user = decoded;
-
-    next();
-
-  } catch (error) {
-    return res.status(401).json({
-      message: 'Token tidak valid',
-    });
-  }
+// Request Logger Middleware
+const requestLogger = (req, res, next) => {
+  const now = new Date().toISOString();
+  console.log(`[${now}] ${req.method} ${req.url}`);
+  next();
 };
 
-module.exports = authMiddleware;
+// Validate Todo Input Middleware
+const validateTodo = (req, res, next) => {
+  const { title } = req.body;
+  if (!title || title.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      message: 'Title is required and cannot be empty',
+    });
+  }
+  const validPriorities = ['low', 'medium', 'high'];
+  if (req.body.priority && !validPriorities.includes(req.body.priority)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Priority must be low, medium, or high',
+    });
+  }
+  const validStatuses = ['pending', 'in_progress', 'done'];
+  if (req.body.status && !validStatuses.includes(req.body.status)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Status must be pending, in_progress, or done',
+    });
+  }
+  next();
+};
+
+module.exports = { requestLogger, validateTodo };

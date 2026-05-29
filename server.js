@@ -1,36 +1,31 @@
 require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const pool = require('./db');
-const authroute = require('./route/authroute');
-const taskroute = require('./route/taskroute');
+const todoRoutes = require('./route/todoRoutes');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/api/auth', authroute);
-app.use('/api/task', taskroute);
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// test route
+// Routes
+app.use('/api/todos', todoRoutes);
+
+// Serve frontend
 app.get('/', (req, res) => {
-  res.send('API Todo List berjalan');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// test database
-pool.connect()
-  .then(() => {
-    console.log('Database connected');
-  })
-  .catch((err) => {
-    console.log('Database error:', err);
-  });
-
-const PORT = process.env.PORT || 5000;
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

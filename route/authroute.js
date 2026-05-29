@@ -1,12 +1,19 @@
+// route/authroute.js
 const express = require('express');
 const router = express.Router();
 
-const {
-  register,
-  login,
-} = require('../controller/authcontroller');
+// Import controller
+const authController = require('../controller/authcontroller');
 
-router.post('/register', register);
-router.post('/login', login);
+// Import middleware
+const middleware = require('../middleware/authMiddleware');
+const validateRegister = middleware.validateRegister; // ✅ Untuk register
+const validateLogin = middleware.validateLogin;       // ✅ Untuk login
+
+// REGISTER - butuh validasi nama, email, password
+router.post('/register', validateRegister, authController.register);
+
+// LOGIN - hanya butuh email & password (TANPA validasi nama!)
+router.post('/login', validateLogin, authController.login);
 
 module.exports = router;

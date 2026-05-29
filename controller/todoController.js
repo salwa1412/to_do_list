@@ -1,139 +1,330 @@
-const db = require('../db');
+// controller/todoController.js
+const pool = require('../db');
 
-// GET all todos (with optional filter)
-const getAllTodos = (req, res) => {
-  const { status, priority, category, search } = req.query;
-  let query = 'SELECT * FROM todos WHERE 1=1';
-  const params = [];
+// ============================================
+// Ganti fungsi getAllTodos dengan kode ini:
 
-  if (status) { query += ' AND status = ?'; params.push(status); }
-  if (priority) { query += ' AND priority = ?'; params.push(priority); }
-  if (category) { query += ' AND category = ?'; params.push(category); }
-  if (search) { query += ' AND title LIKE ?'; params.push(`%${search}%`); }
+const getAllTodos = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { status, priority, category, search } = req.query;
+    const userId = req.user?.id;
 
-  query += ' ORDER BY created_at DESC';
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
 
-  db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    res.json({ success: true, data: results, count: results.length });
-  });
+    let query = 'SELECT * FROM todos WHERE user_id = $1';
+    const params = [userId];
+    let paramIndex = 2;
+
+    // Filter status (dengan dukungan 'overdue')
+    if (status) {
+      if (status === 'overdue') {
+        // Overdue = belum selesai + deadline sudah lewat
+        query += ` AND status != 'done' AND due_date < CURRENT_DATE`;
+      } else {
+        query += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
+      }
+    }
+    
+    if (priority) { 
+      query += ` AND priority = $${paramIndex}`; 
+      params.push(priority); 
+      paramIndex++; 
+    }
+    if (category) { 
+      query += ` AND category = $${paramIndex}`; 
+      params.push(category); 
+      paramIndex++; 
+    }
+    if (search) { 
+      query += ` AND title ILIKE $${paramIndex}`; 
+      params.push(`%${search}%`); 
+      paramIndex++; 
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const result = await client.query(query, params);
+    
+    res.json({ 
+      success: true, 
+      data: result.rows, 
+      count: result.rows.length 
+    });
+
+  } catch (error) {
+    console.error('❌ Get todos error:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengambil task', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // GET single todo by ID
-const getTodoById = (req, res) => {
-  const { id } = req.params;
-  db.query('SELECT * FROM todos WHERE id = ?', [id], (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    if (results.length === 0)
-      return res.status(404).json({ success: false, message: 'Todo not found' });
-    res.json({ success: true, data: results[0] });
-  });
+const getTodoById = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const result = await client.query(
+      'SELECT * FROM todos WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Task tidak ditemukan' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+
+  } catch (error) {
+    console.error('❌ Get todo by ID error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // POST create new todo
-const createTodo = (req, res) => {
-  const { title, description, category, priority, due_date, status } = req.body;
-  const query = `
-    INSERT INTO todos (title, description, category, priority, due_date, status)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-  const values = [
-    title.trim(),
-    description || null,
-    category || 'General',
-    priority || 'medium',
-    due_date || null,
-    status || 'pending',
-  ];
-  db.query(query, values, (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
+const createTodo = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    // Mapping field frontend (Indonesia) → backend (English)
+    const { judul, deskripsi, kategori_id, tenggat_waktu, kategori, prioritas } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const title = judul?.trim();
+    if (!title) {
+      return res.status(400).json({ success: false, message: 'Judul wajib diisi' });
+    }
+
+    const result = await client.query(
+      `INSERT INTO todos (
+        user_id, title, description, category, priority, due_date, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *`,
+      [
+        userId,
+        title,
+        deskripsi || null,
+        kategori || kategori_id || 'General',
+        prioritas || 'medium',
+        tenggat_waktu || null,
+        'pending'
+      ]
+    );
+
     res.status(201).json({
       success: true,
-      message: 'Todo created successfully',
-      data: { id: result.insertId, ...req.body },
+      message: 'Task berhasil ditambahkan',
+      data: result.rows[0]
     });
-  });
+
+  } catch (error) {
+    console.error('❌ Create todo error:', error);
+    res.status(500).json({ success: false, message: 'Gagal menambah task', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // PUT update todo
-const updateTodo = (req, res) => {
-  const { id } = req.params;
-  const { title, description, category, priority, due_date, status } = req.body;
-  const query = `
-    UPDATE todos SET title=?, description=?, category=?, priority=?, due_date=?, status=?
-    WHERE id=?
-  `;
-  const values = [
-    title.trim(),
-    description || null,
-    category || 'General',
-    priority || 'medium',
-    due_date || null,
-    status || 'pending',
-    id,
-  ];
-  db.query(query, values, (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    if (result.affectedRows === 0)
-      return res.status(404).json({ success: false, message: 'Todo not found' });
-    res.json({ success: true, message: 'Todo updated successfully' });
-  });
+const updateTodo = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const { judul, deskripsi, kategori, prioritas, tenggat_waktu, status } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    // Cek kepemilikan task
+    const checkResult = await client.query(
+      'SELECT id FROM todos WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Task tidak ditemukan' });
+    }
+
+    const result = await client.query(
+      `UPDATE todos SET 
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        category = COALESCE($3, category),
+        priority = COALESCE($4, priority),
+        due_date = COALESCE($5, due_date),
+        status = COALESCE($6, status),
+        updated_at = NOW()
+       WHERE id = $7 AND user_id = $8
+       RETURNING *`,
+      [
+        judul?.trim(),
+        deskripsi,
+        kategori,
+        prioritas,
+        tenggat_waktu,
+        status,
+        id,
+        userId
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: 'Task berhasil diupdate',
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Update todo error:', error);
+    res.status(500).json({ success: false, message: 'Gagal update task', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // PATCH update status only
-const updateStatus = (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const validStatuses = ['pending', 'in_progress', 'done'];
-  if (!validStatuses.includes(status))
-    return res.status(400).json({ success: false, message: 'Invalid status' });
+const updateStatus = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const userId = req.user?.id;
 
-  db.query('UPDATE todos SET status=? WHERE id=?', [status, id], (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    if (result.affectedRows === 0)
-      return res.status(404).json({ success: false, message: 'Todo not found' });
-    res.json({ success: true, message: 'Status updated successfully' });
-  });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const validStatuses = ['pending', 'in_progress', 'done'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status tidak valid' });
+    }
+
+    const result = await client.query(
+      'UPDATE todos SET status = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING *',
+      [status, id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Task tidak ditemukan' });
+    }
+
+    res.json({ success: true, message: 'Status berhasil diupdate', data: result.rows[0] });
+
+  } catch (error) {
+    console.error('❌ Update status error:', error);
+    res.status(500).json({ success: false, message: 'Gagal update status', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // DELETE todo
-const deleteTodo = (req, res) => {
-  const { id } = req.params;
-  db.query('DELETE FROM todos WHERE id=?', [id], (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    if (result.affectedRows === 0)
-      return res.status(404).json({ success: false, message: 'Todo not found' });
-    res.json({ success: true, message: 'Todo deleted successfully' });
-  });
+const deleteTodo = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const result = await client.query(
+      'DELETE FROM todos WHERE id = $1 AND user_id = $2 RETURNING *',
+      [id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Task tidak ditemukan' });
+    }
+
+    res.json({ success: true, message: 'Task berhasil dihapus' });
+
+  } catch (error) {
+    console.error('❌ Delete todo error:', error);
+    res.status(500).json({ success: false, message: 'Gagal hapus task', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // DELETE all done todos
-const clearDone = (req, res) => {
-  db.query("DELETE FROM todos WHERE status='done'", (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
+const clearDone = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const result = await client.query(
+      "DELETE FROM todos WHERE status = 'done' AND user_id = $1",
+      [userId]
+    );
+
     res.json({
       success: true,
-      message: `${result.affectedRows} completed todo(s) cleared`,
+      message: `${result.rowCount} task selesai dihapus`,
+      deletedCount: result.rowCount
     });
-  });
+
+  } catch (error) {
+    console.error('❌ Clear done error:', error);
+    res.status(500).json({ success: false, message: 'Gagal hapus task selesai', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 // GET stats
-const getStats = (req, res) => {
-  const query = `
-    SELECT
-      COUNT(*) as total,
-      SUM(status='pending') as pending,
-      SUM(status='in_progress') as in_progress,
-      SUM(status='done') as done,
-      SUM(priority='high') as high_priority,
-      SUM(due_date < CURDATE() AND status != 'done') as overdue
-    FROM todos
-  `;
-  db.query(query, (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: err.message });
-    res.json({ success: true, data: results[0] });
-  });
+const getStats = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const result = await client.query(
+      `SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
+        COUNT(*) FILTER (WHERE status = 'done') as done,
+        COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
+        COUNT(*) FILTER (WHERE due_date < CURRENT_DATE AND status != 'done') as overdue
+       FROM todos WHERE user_id = $1`,
+      [userId]
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+
+  } catch (error) {
+    console.error('❌ Get stats error:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengambil statistik', error: error.message });
+  } finally {
+    client.release();
+  }
 };
 
 module.exports = {

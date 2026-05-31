@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - TaskFlow</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- KIRI -->
+  <div class="auth-section">
+
+    <div class="logo">
+      <div class="logo-icon">✓</div>
+      <h2>TaskFlow</h2>
+    </div>
+
+    <div class="form-container">
+
+      <h1>Buat Akun</h1>
+      <p>Mulai atur aktivitasmu hari ini.</p>
+
+      <form id="registerForm">
+
+        <label>Nama Lengkap</label>
+        <div class="input-box">
+          <input
+            type="text"
+            id="name"
+            placeholder="Masukkan nama lengkap"
+            required
+          >
+        </div>
+
+        <label>Email</label>
+        <div class="input-box">
+          <input
+            type="email"
+            id="email"
+            placeholder="nama@email.com"
+            required
+          >
+        </div>
+
+        <label>Password</label>
+        <div class="input-box">
+          <input
+            type="password"
+            id="password"
+            placeholder="Masukkan password"
+            required
+          >
+        </div>
+
+        <label>Konfirmasi Password</label>
+        <div class="input-box">
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Ulangi password"
+            required
+          >
+        </div>
+
+       <div class="terms">
+  <input type="checkbox" required>
+  <span>Saya setuju dengan Syarat & Ketentuan</span>
+</div>
+
+<button type="submit" class="submit-btn">
+  Daftar
+</button>
+
+<p class="bottom-text">
+  Sudah punya akun?
+  <a href="login.html">Masuk</a>
+</p>
+    </div>
+
+  </div>
+
+  <!-- KANAN -->
+  <div class="banner-section">
+
+    <div class="banner-content">
+      <h1>
+        Kelola pekerjaanmu.<br>
+        Fokus tanpa ribet.
+      </h1>
+
+      <p>
+        TaskFlow membantu mengatur aktivitas,
+        mencatat tugas, dan membuat pekerjaan
+        menjadi lebih terorganisir.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="register.js"></script>
+</body>
+</html>

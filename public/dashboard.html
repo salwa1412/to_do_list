@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard TaskFlow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+
+<div class="dashboard-container">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">✓</div>
+      <h2>TaskFlow</h2>
+    </div>
+    
+    <ul class="menu">
+      <li class="menu-item active" id="menu-dashboard" onclick="switchView('dashboard')">
+        📊 Dashboard
+      </li>
+      <li class="menu-item" id="menu-all-tasks" onclick="switchView('all-tasks')">
+        📋 Semua Tugas
+      </li>
+      <li class="menu-item" onclick="logout()">
+        🚪 Logout
+      </li>
+    </ul>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- ===== VIEW 1: DASHBOARD (Default) ===== -->
+    <div id="dashboard-view">
+      
+      <div class="topbar">
+        <div>
+          <h1 id="greeting">Selamat Datang 👋</h1>
+          <p>Kelola tugasmu dengan lebih mudah</p>
+        </div>
+        <input type="text" placeholder="Cari tugas..." id="searchInput" class="search-box">
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-container">
+        <div class="card completed-card">
+          <h3>✅ Selesai</h3>
+          <h2 id="completedCount">0</h2>
+        </div>
+        <div class="card pending-card">
+          <h3>⏳ Belum Selesai</h3>
+          <h2 id="pendingCount">0</h2>
+        </div>
+        <div class="card overdue-card">
+          <h3>🔴 Terlambat</h3>
+          <h2 id="overdueCount">0</h2>
+        </div>
+      </div>
+
+      <!-- Add Task Form -->
+      <div class="task-form">
+        <h2>➕ Tambah Tugas</h2>
+        <input type="text" id="judul" placeholder="Judul tugas">
+        <textarea id="deskripsi" placeholder="Deskripsi tugas"></textarea>
+        <input type="date" id="tenggat">
+        <button onclick="addTask()">Tambah Tugas</button>
+      </div>
+
+      <!-- Task List (Cards View) -->
+      <div class="task-section">
+        <h2>📌 Tugas Terbaru</h2>
+        <div id="taskList" class="task-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- ===== VIEW 2: SEMUA TUGAS (Hidden by default) ===== -->
+    <div id="all-tasks-view" style="display: none;">
+      
+      <div class="topbar">
+        <h1>📋 Semua Tugas</h1>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all" onclick="filterAllTasks('all')">Semua</button>
+          <button class="filter-btn" data-filter="pending" onclick="filterAllTasks('pending')">Belum Selesai</button>
+          <button class="filter-btn" data-filter="done" onclick="filterAllTasks('done')">Selesai</button>
+          <button class="filter-btn" data-filter="overdue" onclick="filterAllTasks('overdue')">Terlambat</button>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="table-container">
+        <table class="tasks-table">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Deskripsi</th>
+              <th>Status</th>
+              <th>Deadline</th>
+              <th>Prioritas</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="all-tasks-tbody">
+            <!-- Data will be inserted by JavaScript -->
+          </tbody>
+        </table>
+        <div id="all-tasks-empty" style="display: none; text-align: center; padding: 40px; color: #6b7280;">
+          📭 Tidak ada tugas ditemukan
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

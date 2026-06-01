@@ -209,38 +209,70 @@ async function completeTask(taskId) {
   }
 }
 
-// Edit Task (New Feature)
+// Edit Task - Fungsi yang Berfungsi
 async function editTask(taskId) {
-  // Prompt user for new values
-  const newTitle = prompt("Masukkan Judul Baru:");
-  if (!newTitle) return; // Cancel if empty
-
-  const newDesc = prompt("Masukkan Deskripsi Baru:");
-  const newDate = prompt("Masukkan Tanggal Baru (YYYY-MM-DD):");
-
   try {
+    // 1. Ambil data tugas saat ini dari server
     const response = await fetch(`/api/todos/${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      alert('Gagal mengambil data tugas');
+      return;
+    }
+
+    const task = result.data;
+    const currentTitle = task.title || task.judul || '';
+    const currentDesc = task.description || task.deskripsi || '';
+    const currentDate = task.due_date || task.tenggat_waktu || '';
+
+    // 2. Tampilkan prompt dengan nilai default
+    const newTitle = prompt("Edit Judul:", currentTitle);
+    if (newTitle === null || newTitle.trim() === "") {
+      alert("Judul tidak boleh kosong!");
+      return;
+    }
+
+    const newDesc = prompt("Edit Deskripsi:", currentDesc);
+    if (newDesc === null) return; // User cancel
+
+    const newDate = prompt("Edit Tanggal Deadline (YYYY-MM-DD):", currentDate);
+    if (newDate === null) return; // User cancel
+
+    // 3. Kirim update ke server
+    const updateResponse = await fetch(`/api/todos/${taskId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({
-        judul: newTitle,
-        deskripsi: newDesc || '',
-        tenggat_waktu: newDate || null
+        judul: newTitle.trim(),
+        deskripsi: newDesc.trim(),
+        tenggat_waktu: newDate.trim() || null,
+        prioritas: task.priority || 'medium'
       })
     });
 
-    const data = await response.json();
-    if (response.ok && data.success) {
-      alert('✅ Tugas berhasil diupdate!');
+    const updateData = await updateResponse.json();
+
+    if (updateResponse.ok && updateData.success) {
+      alert("✅ Tugas berhasil diperbarui!");
+      // Reload tabel
       loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
     } else {
-      alert(' ' + (data.message || 'Gagal update tugas'));
+      alert("❌ Gagal update: " + (updateData.message || "Terjadi kesalahan"));
     }
+
   } catch (error) {
-    console.error('❌ Edit task error:', error);
+    console.error("Error saat edit tugas:", error);
+    alert("⚠️ Terjadi kesalahan. Periksa console untuk detail.");
   }
 }
 

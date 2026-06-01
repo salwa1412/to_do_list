@@ -385,12 +385,12 @@ async function completeTask(taskId) {
 }
 
 // Edit Task
-<<<<<<< HEAD
+
 function editTask(taskId) {
   alert('✏️ Edit task ID: ' + taskId + '\n\nFitur edit akan segera tersedia!');
 }
 
-=======
+
 async function editTask(taskId) {
 
   try {
@@ -437,7 +437,7 @@ async function editTask(taskId) {
   }
 
 }
->>>>>>> e601499 (Update dashboard UI and edit modal)
+
 // Delete Task
 async function deleteTask(taskId) {
   if (!confirm('Yakin ingin menghapus tugas ini?')) return;
@@ -526,8 +526,7 @@ function updateStat(elementId, value) {
   if (el) el.innerText = value;
 }
 
-<<<<<<< HEAD
-=======
+
 function closeEditModal(){
   document.getElementById('editModal')
     .style.display = 'none';
@@ -600,7 +599,7 @@ async function saveEditTask(){
   }
 
 }
->>>>>>> e601499 (Update dashboard UI and edit modal)
+
 // Export functions
 window.switchView = switchView;
 window.filterAllTasks = filterAllTasks;
@@ -612,9 +611,6 @@ window.addTask = addTask;
 window.completeTask = completeTask;
 window.deleteTask = deleteTask;
 window.editTask = editTask;
-<<<<<<< HEAD
-=======
 window.saveEditTask = saveEditTask;
 window.closeEditModal = closeEditModal;
->>>>>>> e601499 (Update dashboard UI and edit modal)
 window.logout = logout;

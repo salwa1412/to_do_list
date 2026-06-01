@@ -209,44 +209,38 @@ async function completeTask(taskId) {
   }
 }
 
-// ============================================
-// EDIT TASK (FUNGSI PERBAIKAN)
-// ============================================
+// Edit Task (New Feature)
 async function editTask(taskId) {
+  // Prompt user for new values
   const newTitle = prompt("Masukkan Judul Baru:");
-  if (newTitle === null || newTitle.trim() === "") return;
-  
+  if (!newTitle) return; // Cancel if empty
+
   const newDesc = prompt("Masukkan Deskripsi Baru:");
-  if (newDesc === null) return;
-  
   const newDate = prompt("Masukkan Tanggal Baru (YYYY-MM-DD):");
-  if (newDate === null) return;
 
   try {
     const response = await fetch(`/api/todos/${taskId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        judul: newTitle.trim(),
-        deskripsi: newDesc.trim(),
-        tenggat_waktu: newDate.trim() || null
+        judul: newTitle,
+        deskripsi: newDesc || '',
+        tenggat_waktu: newDate || null
       })
     });
 
     const data = await response.json();
-    
     if (response.ok && data.success) {
-      alert("✅ Berhasil!");
-      loadAllTasks('all');
+      alert('✅ Tugas berhasil diupdate!');
+      loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
     } else {
-      alert("❌ Error: " + data.message);
+      alert(' ' + (data.message || 'Gagal update tugas'));
     }
-  } catch (err) {
-    alert("❌ Gagal koneksi");
-    console.error(err);
+  } catch (error) {
+    console.error('❌ Edit task error:', error);
   }
 }
 

@@ -35,7 +35,7 @@
   <!-- ===== MAIN CONTENT ===== -->
   <main class="main-content">
 
-    <!-- ===== VIEW 1: DASHBOARD (Default) ===== -->
+    <!-- ===== VIEW 1: DASHBOARD ===== -->
     <div id="dashboard-view">
       
       <div class="topbar">
@@ -71,7 +71,7 @@
         <button onclick="addTask()">Tambah Tugas</button>
       </div>
 
-      <!-- Task List (Cards View) -->
+      <!-- Task List -->
       <div class="task-section">
         <h2>📌 Tugas Terbaru</h2>
         <div id="taskList" class="task-grid"></div>
@@ -79,11 +79,63 @@
 
     </div>
 
-    <!-- ===== VIEW 2: SEMUA TUGAS (Hidden by default) ===== -->
+    <!-- ===== VIEW 2: SEMUA TUGAS ===== -->
     <div id="all-tasks-view" style="display: none;">
       
-      <div class="topbar">
-        <h1>📋 Semua Tugas</h1>
+      <div class="page-header">
+        <div class="header-content">
+          <h1 class="page-title">📋 Semua Tugas</h1>
+          <p class="page-subtitle">Kelola semua tugasmu dengan mudah dan terorganisir</p>
+        </div>
+        <div class="header-actions">
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Cari tugas..." class="search-input" id="searchAllTasks">
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Summary -->
+      <div class="stats-summary">
+        <div class="stat-summary-card">
+          <div class="stat-summary-icon stat-icon-purple">📋</div>
+          <div class="stat-summary-info">
+            <span class="stat-label">Total Tugas</span>
+            <h3 class="stat-value" id="stat-total">0</h3>
+            <span class="stat-desc">Semua tugas</span>
+          </div>
+        </div>
+
+        <div class="stat-summary-card">
+          <div class="stat-summary-icon stat-icon-yellow">⏳</div>
+          <div class="stat-summary-info">
+            <span class="stat-label">Belum Selesai</span>
+            <h3 class="stat-value stat-value-yellow" id="stat-pending">0</h3>
+            <span class="stat-desc">Tugas belum selesai</span>
+          </div>
+        </div>
+
+        <div class="stat-summary-card">
+          <div class="stat-summary-icon stat-icon-green">✅</div>
+          <div class="stat-summary-info">
+            <span class="stat-label">Selesai</span>
+            <h3 class="stat-value stat-value-green" id="stat-completed">0</h3>
+            <span class="stat-desc">Tugas selesai</span>
+          </div>
+        </div>
+
+        <div class="stat-summary-card">
+          <div class="stat-summary-icon stat-icon-red">🕐</div>
+          <div class="stat-summary-info">
+            <span class="stat-label">Terlambat</span>
+            <h3 class="stat-value stat-value-red" id="stat-overdue">0</h3>
+            <span class="stat-desc">Tugas terlambat</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="filter-section">
         <div class="filter-buttons">
           <button class="filter-btn active" data-filter="all" onclick="filterAllTasks('all')">Semua</button>
           <button class="filter-btn" data-filter="pending" onclick="filterAllTasks('pending')">Belum Selesai</button>
@@ -92,25 +144,36 @@
         </div>
       </div>
 
-      <!-- Table View -->
-      <div class="table-container">
-        <table class="tasks-table">
-          <thead>
-            <tr>
-              <th>Judul</th>
-              <th>Deskripsi</th>
-              <th>Status</th>
-              <th>Deadline</th>
-              <th>Prioritas</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="all-tasks-tbody">
-            <!-- Data will be inserted by JavaScript -->
-          </tbody>
-        </table>
-        <div id="all-tasks-empty" style="display: none; text-align: center; padding: 40px; color: #6b7280;">
-          📭 Tidak ada tugas ditemukan
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th class="col-check"></th>
+                <th class="col-title">Judul</th>
+                <th class="col-desc">Deskripsi</th>
+                <th class="col-status">Status</th>
+                <th class="col-deadline">Deadline</th>
+                <th class="col-priority">Prioritas</th>
+                <th class="col-actions">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="all-tasks-tbody">
+              <!-- Data will be inserted by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="all-tasks-empty" class="empty-state" style="display: none;">
+          <div class="empty-icon">📭</div>
+          <p>Tidak ada tugas ditemukan</p>
+        </div>
+
+        <!-- Pagination Info -->
+        <div class="pagination-info">
+          Menampilkan <span id="showing-from">0</span> dari <span id="total-tasks">0</span> tugas
         </div>
       </div>
 

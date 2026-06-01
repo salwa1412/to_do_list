@@ -1,15 +1,12 @@
 // public/dashboard.js
 
-// Get token & user from localStorage
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-// Redirect if not logged in
 if (!token) {
   window.location.href = '/login.html';
 }
 
-// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   const greetingEl = document.getElementById('greeting');
   if (greetingEl && user?.nama) {
@@ -18,12 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTasks();
 });
 
-// ============================================
-// VIEW SWITCHING
-// ============================================
+// View Switching
 function switchView(viewName) {
-  console.log('🔄 Switching to:', viewName);
-  
   const dashboardView = document.getElementById('dashboard-view');
   const allTasksView = document.getElementById('all-tasks-view');
   const menuDashboard = document.getElementById('menu-dashboard');
@@ -32,37 +25,84 @@ function switchView(viewName) {
   if (viewName === 'dashboard') {
     dashboardView.style.display = 'block';
     allTasksView.style.display = 'none';
-    if (menuDashboard) menuDashboard.classList.add('active');
-    if (menuAllTasks) menuAllTasks.classList.remove('active');
+    menuDashboard.classList.add('active');
+    menuAllTasks.classList.remove('active');
     loadTasks();
   } else if (viewName === 'all-tasks') {
     dashboardView.style.display = 'none';
     allTasksView.style.display = 'block';
-    if (menuDashboard) menuDashboard.classList.remove('active');
-    if (menuAllTasks) menuAllTasks.classList.add('active');
+    menuDashboard.classList.remove('active');
+    menuAllTasks.classList.add('active');
     loadAllTasks('all');
   }
 }
 
-// ============================================
-// FILTER BUTTONS
-// ============================================
+// Filter Functions
 function filterAllTasks(filter) {
-  console.log('🔍 Filter:', filter);
-  
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
     if (btn.dataset.filter === filter) {
       btn.classList.add('active');
     }
   });
-  
   loadAllTasks(filter);
 }
 
-// ============================================
-// LOAD TASKS - DASHBOARD VIEW (Cards)
-// ============================================
+// Add Task
+async function addTask() {
+  const judulInput = document.getElementById('judul');
+  const deskripsiInput = document.getElementById('deskripsi');
+  const tenggatInput = document.getElementById('tenggat');
+  
+  const judul = judulInput?.value?.trim();
+  const deskripsi = deskripsiInput?.value?.trim();
+  const tenggat_waktu = tenggatInput?.value;
+
+  if (!judul) {
+    alert('Judul wajib diisi');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        judul, 
+        deskripsi, 
+        tenggat_waktu,
+        prioritas: 'medium'
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert('✅ ' + data.message);
+      
+      if (judulInput) judulInput.value = '';
+      if (deskripsiInput) deskripsiInput.value = '';
+      if (tenggatInput) tenggatInput.value = '';
+      
+      loadTasks();
+      
+      const allTasksView = document.getElementById('all-tasks-view');
+      if (allTasksView && allTasksView.style.display !== 'none') {
+        loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+      }
+    } else {
+      alert('❌ ' + (data.message || 'Gagal menambah tugas'));
+    }
+  } catch (error) {
+    console.error('❌ Add task error:', error);
+    alert('⚠️ Terjadi kesalahan koneksi');
+  }
+}
+
+// Load Tasks for Dashboard
 async function loadTasks() {
   try {
     const response = await fetch('/api/todos', {
@@ -76,7 +116,7 @@ async function loadTasks() {
     const result = await response.json();
 
     if (!response.ok || !result.success) {
-      throw new Error(result.message || 'Gagal mengambil task');
+      throw new Error(result.message || 'Gagal mengambil tugas');
     }
 
     const tasks = result.data || [];
@@ -85,6 +125,7 @@ async function loadTasks() {
 
     let completed = 0, pending = 0, overdue = 0;
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     tasks.forEach(task => {
       const title = task.title || task.judul || 'Tanpa Judul';
@@ -95,10 +136,13 @@ async function loadTasks() {
       const category = task.category || 'General';
       const taskId = task.id;
 
-      if (status === 'done') completed++;
-      else {
+      if (status === 'done') {
+        completed++;
+      } else {
         pending++;
-        if (dueDate && new Date(dueDate) < today) overdue++;
+        if (dueDate && new Date(dueDate) < today) {
+          overdue++;
+        }
       }
 
       if (taskList) {
@@ -138,19 +182,14 @@ async function loadTasks() {
   }
 }
 
-// ============================================
-// LOAD ALL TASKS - TABLE VIEW (With Filter)
-// ============================================
+// Load All Tasks for Table View
 async function loadAllTasks(filter = 'all') {
   const tbody = document.getElementById('all-tasks-tbody');
   const emptyState = document.getElementById('all-tasks-empty');
   
-  if (!tbody) {
-    console.error('❌ Table body not found!');
-    return;
-  }
+  if (!tbody) return;
   
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">⏳ Memuat data...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">⏳ Memuat data...</td></tr>';
   if (emptyState) emptyState.style.display = 'none';
 
   try {
@@ -178,21 +217,21 @@ async function loadAllTasks(filter = 'all') {
     if (tasks.length === 0) {
       tbody.innerHTML = '';
       if (emptyState) emptyState.style.display = 'block';
+      updateStatsSummary([]);
       return;
     }
 
     if (emptyState) emptyState.style.display = 'none';
     renderAllTasksTable(tasks);
+    updateStatsSummary(tasks);
 
   } catch (error) {
     console.error('❌ Load all tasks error:', error);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626;">❌ ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#ef4444;">❌ ${error.message}</td></tr>`;
   }
 }
 
-// ============================================
-// RENDER TABLE
-// ============================================
+// Render Table
 function renderAllTasksTable(tasks) {
   const tbody = document.getElementById('all-tasks-tbody');
   if (!tbody) return;
@@ -211,89 +250,114 @@ function renderAllTasksTable(tasks) {
 
     const isOverdue = dueDate && new Date(dueDate) < today && status !== 'done';
     
+    let daysText = '';
+    if (dueDate) {
+      const due = new Date(dueDate);
+      const diffTime = due - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 0) {
+        daysText = `Belum ${diffDays} hari`;
+      } else if (diffDays < 0 && status !== 'done') {
+        daysText = `Terlambat ${Math.abs(diffDays)} hari`;
+      }
+    }
+    
     const statusBadge = {
-      'pending': '<span class="badge status-pending">⏳ Belum</span>',
-      'in_progress': '<span class="badge status-progress">🔄 Proses</span>',
-      'done': '<span class="badge status-done">✅ Selesai</span>'
-    }[status] || status;
+      'pending': '<span class="status-badge pending">⏳ Belum Selesai</span>',
+      'in_progress': '<span class="status-badge in_progress">🔄 Proses</span>',
+      'done': '<span class="status-badge done">✅ Selesai</span>'
+    }[status] || `<span class="status-badge pending">${status}</span>`;
 
-    const priorityBadge = {
-      'low': '<span class="badge priority-low">🟢 Rendah</span>',
-      'medium': '<span class="badge priority-medium">🟡 Sedang</span>',
-      'high': '<span class="badge priority-high">🔴 Tinggi</span>'
-    }[priority] || priority;
+    const priorityDot = {
+      'low': '<span class="priority-dot low"></span>',
+      'medium': '<span class="priority-dot medium"></span>',
+      'high': '<span class="priority-dot high"></span>'
+    }[priority] || '<span class="priority-dot medium"></span>';
+    
+    const priorityLabel = {
+      'low': 'Rendah',
+      'medium': 'Sedang',
+      'high': 'Tinggi'
+    }[priority] || 'Sedang';
 
     const dueDisplay = dueDate 
-      ? `<span class="${isOverdue ? 'overdue' : ''}">${formatDate(dueDate)}</span>`
-      : '-';
+      ? `<div class="deadline-wrapper">
+          <span class="deadline-date">📅 ${formatDate(dueDate)}</span>
+          ${daysText ? `<span class="deadline-remaining ${isOverdue ? 'overdue' : ''}">${daysText}</span>` : ''}
+        </div>`
+      : '<span style="color:var(--text-muted)">-</span>';
 
     const actions = `
-      ${status !== 'done' ? `<button class="btn-icon done" onclick="completeTask('${taskId}')" title="Tandai selesai">✓</button>` : ''}
-      <button class="btn-icon delete" onclick="deleteTask('${taskId}')" title="Hapus">🗑️</button>
+      <div class="action-buttons">
+        <button class="btn-action edit" onclick="editTask('${taskId}')" title="Edit">✏️</button>
+        ${status !== 'done' ? `<button class="btn-action done" onclick="completeTask('${taskId}')" title="Tandai selesai">✓ Selesai</button>` : ''}
+        <button class="btn-action delete" onclick="deleteTask('${taskId}')" title="Hapus">🗑️</button>
+      </div>
     `;
 
     const row = document.createElement('tr');
     if (isOverdue) row.classList.add('row-overdue');
 
     row.innerHTML = `
-      <td><strong>${escapeHtml(title)}</strong></td>
-      <td><small>${escapeHtml(description.substring(0, 50))}${description.length > 50 ? '...' : ''}</small></td>
-      <td>${statusBadge}</td>
-      <td>${dueDisplay}</td>
-      <td>${priorityBadge}</td>
-      <td>${actions}</td>
+      <td class="col-check"><input type="checkbox" class="task-checkbox"></td>
+      <td class="col-title">
+        <div class="task-title-wrapper">
+          <span class="task-dot"></span>
+          <span class="task-title-cell">${escapeHtml(title)}</span>
+        </div>
+      </td>
+      <td class="col-desc"><span class="task-desc-cell">${escapeHtml(description)}</span></td>
+      <td class="col-status">${statusBadge}</td>
+      <td class="col-deadline">${dueDisplay}</td>
+      <td class="col-priority">
+        <div class="priority-wrapper">
+          ${priorityDot}
+          <span>${priorityLabel}</span>
+        </div>
+      </td>
+      <td class="col-actions">${actions}</td>
     `;
 
     tbody.appendChild(row);
   });
 }
 
-// ============================================
-// ADD TASK
-// ============================================
-async function addTask() {
-  const judul = document.getElementById('judul')?.value?.trim();
-  const deskripsi = document.getElementById('deskripsi')?.value?.trim();
-  const tenggat_waktu = document.getElementById('tenggat')?.value;
+// Update Stats Summary
+function updateStatsSummary(tasks) {
+  const total = tasks.length;
+  const pending = tasks.filter(t => t.status === 'pending').length;
+  const completed = tasks.filter(t => t.status === 'done').length;
+  const overdue = tasks.filter(t => {
+    if (!t.due_date || t.status === 'done') return false;
+    return new Date(t.due_date) < new Date();
+  }).length;
 
-  if (!judul) {
-    alert('Judul wajib diisi');
-    return;
-  }
+  const totalEl = document.getElementById('stat-total');
+  const pendingEl = document.getElementById('stat-pending');
+  const completedEl = document.getElementById('stat-completed');
+  const overdueEl = document.getElementById('stat-overdue');
 
-  try {
-    const response = await fetch('/api/todos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ judul, deskripsi, tenggat_waktu })
-    });
+  if (totalEl) totalEl.innerText = total;
+  if (pendingEl) pendingEl.innerText = pending;
+  if (completedEl) completedEl.innerText = completed;
+  if (overdueEl) overdueEl.innerText = overdue;
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      alert('✅ ' + data.message);
-      document.getElementById('judul').value = '';
-      document.getElementById('deskripsi').value = '';
-      document.getElementById('tenggat').value = '';
-      loadTasks();
-      if (document.getElementById('all-tasks-view').style.display !== 'none') {
-        loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
-      }
+  const showingFromEl = document.getElementById('showing-from');
+  const totalTasksEl = document.getElementById('total-tasks');
+  
+  if (showingFromEl && totalTasksEl) {
+    if (total === 0) {
+      showingFromEl.innerText = '0';
+      totalTasksEl.innerText = '0';
     } else {
-      alert('❌ ' + (data.message || 'Gagal menambah task'));
+      showingFromEl.innerText = `1 - ${total}`;
+      totalTasksEl.innerText = total;
     }
-  } catch (error) {
-    console.error('❌ Add task error:', error);
-    alert('⚠️ Terjadi kesalahan koneksi');
   }
 }
 
-// ============================================
-// COMPLETE TASK
-// ============================================
+// Complete Task
 async function completeTask(taskId) {
   try {
     const response = await fetch(`/api/todos/${taskId}/status`, {
@@ -308,7 +372,8 @@ async function completeTask(taskId) {
     const data = await response.json();
     if (response.ok && data.success) {
       loadTasks();
-      if (document.getElementById('all-tasks-view').style.display !== 'none') {
+      const allTasksView = document.getElementById('all-tasks-view');
+      if (allTasksView && allTasksView.style.display !== 'none') {
         loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
       }
     } else {
@@ -319,13 +384,12 @@ async function completeTask(taskId) {
   }
 }
 
-// ============================================
-// EDIT & DELETE
-// ============================================
+// Edit Task
 function editTask(taskId) {
   alert('✏️ Edit task ID: ' + taskId + '\n\nFitur edit akan segera tersedia!');
 }
 
+// Delete Task
 async function deleteTask(taskId) {
   if (!confirm('Yakin ingin menghapus tugas ini?')) return;
 
@@ -339,26 +403,26 @@ async function deleteTask(taskId) {
     if (response.ok && data.success) {
       alert('✅ ' + data.message);
       loadTasks();
-      if (document.getElementById('all-tasks-view').style.display !== 'none') {
+      const allTasksView = document.getElementById('all-tasks-view');
+      if (allTasksView && allTasksView.style.display !== 'none') {
         loadAllTasks(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
       }
     } else {
-      alert('❌ ' + (data.message || 'Gagal hapus task'));
+      alert('❌ ' + (data.message || 'Gagal hapus tugas'));
     }
   } catch (error) {
     console.error('❌ Delete task error:', error);
   }
 }
 
-// ============================================
-// LOGOUT & SEARCH
-// ============================================
+// Logout
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.href = '/login.html';
 }
 
+// Search
 document.getElementById('searchInput')?.addEventListener('input', function() {
   const value = this.value.toLowerCase();
   const cards = document.querySelectorAll('#taskList .task-card');
@@ -368,9 +432,16 @@ document.getElementById('searchInput')?.addEventListener('input', function() {
   });
 });
 
-// ============================================
-// HELPERS
-// ============================================
+document.getElementById('searchAllTasks')?.addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+  const rows = document.querySelectorAll('#all-tasks-tbody tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(value) ? '' : 'none';
+  });
+});
+
+// Helpers
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
@@ -406,12 +477,13 @@ function updateStat(elementId, value) {
   if (el) el.innerText = value;
 }
 
-// Export functions to window
+// Export functions
 window.switchView = switchView;
 window.filterAllTasks = filterAllTasks;
 window.loadTasks = loadTasks;
 window.loadAllTasks = loadAllTasks;
 window.renderAllTasksTable = renderAllTasksTable;
+window.updateStatsSummary = updateStatsSummary;
 window.addTask = addTask;
 window.completeTask = completeTask;
 window.deleteTask = deleteTask;

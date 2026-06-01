@@ -385,10 +385,59 @@ async function completeTask(taskId) {
 }
 
 // Edit Task
+<<<<<<< HEAD
 function editTask(taskId) {
   alert('✏️ Edit task ID: ' + taskId + '\n\nFitur edit akan segera tersedia!');
 }
 
+=======
+async function editTask(taskId) {
+
+  try {
+
+    const response =
+      await fetch(`/api/todos/${taskId}`,{
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      });
+
+    const result =
+      await response.json();
+
+    if(!result.success){
+      alert('Task tidak ditemukan');
+      return;
+    }
+
+    const task = result.data;
+
+    document.getElementById('editTaskId').value =
+      task.id;
+
+    document.getElementById('editJudul').value =
+      task.title || '';
+
+    document.getElementById('editDeskripsi').value =
+      task.description || '';
+
+    document.getElementById('editTenggat').value =
+      task.due_date
+        ? task.due_date.split('T')[0]
+        : '';
+
+    document.getElementById('editModal')
+      .style.display = 'flex';
+
+  } catch(error){
+
+    console.error(error);
+    alert('Gagal mengambil data task');
+
+  }
+
+}
+>>>>>>> e601499 (Update dashboard UI and edit modal)
 // Delete Task
 async function deleteTask(taskId) {
   if (!confirm('Yakin ingin menghapus tugas ini?')) return;
@@ -477,6 +526,81 @@ function updateStat(elementId, value) {
   if (el) el.innerText = value;
 }
 
+<<<<<<< HEAD
+=======
+function closeEditModal(){
+  document.getElementById('editModal')
+    .style.display = 'none';
+}
+
+async function saveEditTask(){
+
+  const taskId =
+    document.getElementById('editTaskId').value;
+
+  const judul =
+    document.getElementById('editJudul').value;
+
+  const deskripsi =
+    document.getElementById('editDeskripsi').value;
+
+  const tenggat =
+    document.getElementById('editTenggat').value;
+
+  try{
+
+    const response =
+      await fetch(`/api/todos/${taskId}`,{
+
+        method:'PUT',
+
+        headers:{
+          'Content-Type':'application/json',
+          Authorization:`Bearer ${token}`
+        },
+
+        body:JSON.stringify({
+
+          judul,
+          deskripsi,
+          tenggat_waktu:
+            tenggat || null
+
+        })
+
+      });
+
+    const result =
+      await response.json();
+
+    if(result.success){
+
+      alert('✅ Task berhasil diupdate');
+
+      closeEditModal();
+
+      loadTasks();
+
+      loadAllTasks(
+        document.querySelector('.filter-btn.active')
+          ?.dataset.filter || 'all'
+      );
+
+    }else{
+
+      alert('❌ ' + result.message);
+
+    }
+
+  }catch(error){
+
+    console.error(error);
+    alert('Gagal update task');
+
+  }
+
+}
+>>>>>>> e601499 (Update dashboard UI and edit modal)
 // Export functions
 window.switchView = switchView;
 window.filterAllTasks = filterAllTasks;
@@ -488,4 +612,9 @@ window.addTask = addTask;
 window.completeTask = completeTask;
 window.deleteTask = deleteTask;
 window.editTask = editTask;
+<<<<<<< HEAD
+=======
+window.saveEditTask = saveEditTask;
+window.closeEditModal = closeEditModal;
+>>>>>>> e601499 (Update dashboard UI and edit modal)
 window.logout = logout;

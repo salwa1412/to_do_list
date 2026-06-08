@@ -1,8 +1,9 @@
-**NAMA KELOMPOK:**
-Khairuna Amalia 5230411242
-Salwa Fharah Nur A 5230411243
-Zikriana Putri M 5230411252
-Anita Lidia Widiya S 5230411273
+## NAMA KELOMPOK :
+- Khairuna Amalia 5230411242
+- Salwa Fharah Nur A 5230411243
+- Zikriana Putri M 5230411252
+- Anita Lidia Widiya S 5230411273
+
 
 # ✦ Taskly — To Do List App
 
@@ -38,6 +39,5 @@ Buka browser: **http://localhost:5000**
 - **Frontend**: HTML, CSS, Vanilla JavaScript
 - **Font**: Syne + DM Sans (Google Fonts)
 
-## 📝 Lisensi
 
 MIT

@@ -1,3 +1,9 @@
+**NAMA KELOMPOK:**
+Khairuna Amalia 5230411242
+Salwa Fharah Nur A 5230411243
+Zikriana Putri M 5230411252
+Anita Lidia Widiya S 5230411273
+
 # ✦ Taskly — To Do List App
 
 Aplikasi manajemen tugas berbasis web dengan **Node.js + Express + MySQL**.
